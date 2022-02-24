@@ -1,7 +1,9 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/lzj09/chat-server/message"
 	"k8s.io/klog/v2"
 	"net"
 )
@@ -47,6 +49,15 @@ func readConn(conn net.Conn) {
 		}
 
 		msg := string(buffer[0:n])
+
+		// 反序列化消息
+		var msgObj message.Msg
+		if err := json.Unmarshal(buffer[0:n], &msgObj); err != nil {
+			klog.Errorf("json unmarshal error: %v", err)
+
+			// TODO 需要有反馈消息
+			continue
+		}
 
 		if msg == "bye" {
 			conn.Write([]byte(msg))
