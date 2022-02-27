@@ -59,6 +59,12 @@ func readConn(conn net.Conn) {
 			continue
 		}
 
+		switch msgObj.MsgType {
+		case message.LoginMsgType:
+			// 处理登录
+
+		}
+
 		if msg == "bye" {
 			conn.Write([]byte(msg))
 			break
