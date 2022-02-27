@@ -1,13 +1,13 @@
 package message
 
 const (
-	// 登录消息
+	// LoginMsgType 登录消息
 	LoginMsgType int64 = 1
 
-	// 反馈消息
+	// FeedbackMsgType 反馈消息
 	FeedbackMsgType int64 = 20
 
-	// 错误状态
+	// ErrorStatus 错误状态
 	ErrorStatus int64 = 500
 )
 
