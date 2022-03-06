@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lzj09/chat-server/message"
+	"github.com/lzj09/chat-server/user"
+	"github.com/lzj09/chat-server/utils"
 	"k8s.io/klog/v2"
 	"net"
 )
+
+var connections = make(map[string]net.Conn)
 
 // ChatServer chat服务
 type ChatServer struct {
@@ -48,29 +52,76 @@ func readConn(conn net.Conn) {
 			continue
 		}
 
-		msg := string(buffer[0:n])
-
 		// 反序列化消息
 		var msgObj message.Msg
 		if err := json.Unmarshal(buffer[0:n], &msgObj); err != nil {
-			klog.Errorf("json unmarshal error: %v", err)
+			klog.Errorf("json unmarshal msg error: %v", err)
 
-			// TODO 需要有反馈消息
+			bytes, err := feedbackMsg("data error", message.ErrorStatus)
+			if err != nil {
+				klog.Errorf("get feedback msg error: %v", err)
+				continue
+			}
+
+			conn.Write(bytes)
 			continue
 		}
 
 		switch msgObj.MsgType {
 		case message.LoginMsgType:
 			// 处理登录
+			var contents map[string]string
+			if err := json.Unmarshal([]byte(msgObj.Content), &contents); err != nil {
+				klog.Errorf("json unmarshal msg content error: %v", err)
 
+				bytes, err := feedbackMsg("login data error", message.ErrorStatus)
+				if err != nil {
+					klog.Errorf("get feedback msg error: %v", err)
+					break
+				}
+
+				conn.Write(bytes)
+				break
+			}
+			userService := utils.Obtain(new(user.DefaultUserService)).(*user.DefaultUserService)
+			user, err := userService.Login(contents["username"], contents["password"])
+			if err != nil {
+				klog.Errorf("user login error: %v", err)
+
+				bytes, err := feedbackMsg("username or password error", message.ErrorStatus)
+				if err != nil {
+					klog.Errorf("get feedback msg error: %v", err)
+					break
+				}
+
+				conn.Write(bytes)
+				break
+			}
+
+			content, err := json.Marshal(user)
+			bytes, err := feedbackMsg(string(content), message.SuccessStatus)
+			if err != nil {
+				klog.Errorf("get feedback msg error: %v", err)
+				break
+			}
+
+			// 保存连接
+			connections[user.ID] = conn
+			conn.Write(bytes)
 		}
 
-		if msg == "bye" {
-			conn.Write([]byte(msg))
-			break
-		}
-
-		conn.Write([]byte(fmt.Sprintf("已读: %v", msg)))
 	}
 	conn.Close()
+}
+
+// feedbackMsg 封装反馈消息
+func feedbackMsg(content string, status int64) ([]byte, error) {
+	msg := message.Msg{
+		Content: content,
+		MsgType: message.FeedbackMsgType,
+		Status:  status,
+	}
+
+	// 序列化
+	return json.Marshal(msg)
 }
