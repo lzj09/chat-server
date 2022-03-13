@@ -54,7 +54,8 @@ func readConn(conn net.Conn) {
 
 		// 反序列化消息
 		var msgObj message.Msg
-		if err := json.Unmarshal(buffer[0:n], &msgObj); err != nil {
+		msgBytes := buffer[0:n]
+		if err := json.Unmarshal(msgBytes, &msgObj); err != nil {
 			klog.Errorf("json unmarshal msg error: %v", err)
 
 			bytes, err := feedbackMsg("data error", message.ErrorStatus)
@@ -108,6 +109,40 @@ func readConn(conn net.Conn) {
 			// 保存连接
 			connections[user.ID] = conn
 			conn.Write(bytes)
+
+		case message.PersonalDialMsgType:
+			// 校验是否登录，暂时校验是否带上FromID
+			if msgObj.FromID == "" {
+				bytes, err := feedbackMsg("please login", message.ErrorStatus)
+				if err != nil {
+					klog.Errorf("get feedback msg error: %v", err)
+					break
+				}
+
+				conn.Write(bytes)
+				break
+			}
+
+			if msgObj.ToID == "" {
+				bytes, err := feedbackMsg("data error", message.ErrorStatus)
+				if err != nil {
+					klog.Errorf("get feedback msg error: %v", err)
+					break
+				}
+
+				conn.Write(bytes)
+				break
+			}
+
+			targetConn, ok := connections[msgObj.ToID]
+			if ok {
+				// 对方在线，则转发消息
+				targetConn.Write(msgBytes)
+			}
+			// 将消息持久化
+			msgObj.Status = message.UnreadStatus
+			messageService := utils.Obtain(new(message.DefaultMessageService)).(*message.DefaultMessageService)
+			messageService.Save(&msgObj)
 		}
 
 	}
