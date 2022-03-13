@@ -1,5 +1,11 @@
 package user
 
+import (
+	"errors"
+	"github.com/lzj09/chat-server/persistent/mysql"
+	"k8s.io/klog/v2"
+)
+
 // Service 用户信息服务接口
 type Service interface {
 	// Login 登录
@@ -11,10 +17,17 @@ type DefaultUserService struct {
 }
 
 func (svc *DefaultUserService) Login(username, password string) (*User, error) {
-	// TODO 模拟登录，后续完善
-	return &User{
-		ID:       "123",
-		UserName: username,
-		Password: password,
-	}, nil
+	var user User
+	err := mysql.MysqlClient.Get(&user, "select * from chat_user where username = ?", username)
+	if err != nil {
+		klog.Errorf("get user by username %v error: %v", username, err)
+		return nil, err
+	}
+
+	// TODO 密码加密，后续完善
+	if password != user.Password {
+		return nil, errors.New("username or password error")
+	}
+
+	return &user, nil
 }

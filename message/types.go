@@ -16,11 +16,14 @@ const (
 	// SuccessStatus 正常状态
 	SuccessStatus int64 = 200
 
-	// MessageDBName 消息库名称
-	MessageDBName = "msg_db"
+	// UnreadStatus 未读状态
+	UnreadStatus int64 = 10
 
-	// MessageTableName 消息表名称
-	MessageTableName = "msg"
+	// DBName 消息库名称
+	DBName = "msg_db"
+
+	// TableName 消息表名称
+	TableName = "msg"
 )
 
 // Msg 消息实体

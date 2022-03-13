@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/lzj09/chat-server/message"
-	"github.com/lzj09/chat-server/user"
 	"k8s.io/klog/v2"
 	"net"
 )
@@ -16,7 +16,7 @@ func main() {
 
 	buffer := make([]byte, 1024)
 	contents := map[string]string{
-		"username": "lzj",
+		"username": "neil",
 		"password": "123",
 	}
 	contentBytes, _ := json.Marshal(contents)
@@ -35,21 +35,8 @@ func main() {
 
 		var msgObj message.Msg
 		json.Unmarshal(buffer[:n], &msgObj)
-		if msgObj.Status == message.SuccessStatus {
-			// 登录成功，获取用户信息
-			var userObj user.User
-			json.Unmarshal([]byte(msgObj.Content), &userObj)
 
-			toMsg := message.Msg{
-				Content: "你好，测试，测试，测试，测试，测试，测试",
-				MsgType: message.PersonalDialMsgType,
-				FromID:  userObj.ID,
-				ToID:    "msg-002",
-			}
-
-			toMsgBytes, _ := json.Marshal(toMsg)
-			conn.Write(toMsgBytes)
-		}
+		fmt.Printf("%v\n", msgObj)
 	}
 	conn.Close()
 }
