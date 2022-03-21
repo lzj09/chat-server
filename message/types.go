@@ -1,6 +1,9 @@
 package message
 
 const (
+	// LogoutMsgType 退出消息
+	LogoutMsgType int64 = -1
+
 	// LoginMsgType 登录消息
 	LoginMsgType int64 = 1
 
