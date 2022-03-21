@@ -45,6 +45,7 @@ func (cs *ChatServer) Run() {
 func readConn(conn net.Conn) {
 	buffer := make([]byte, 1024)
 
+	loopFlag := false
 	for {
 		n, err := conn.Read(buffer)
 		if err != nil {
@@ -143,8 +144,28 @@ func readConn(conn net.Conn) {
 			msgObj.Status = message.UnreadStatus
 			messageService := utils.Obtain(new(message.DefaultMessageService)).(*message.DefaultMessageService)
 			messageService.Save(&msgObj)
+
+		case message.LogoutMsgType:
+			// 校验是否登录，暂时校验是否带上FromID
+			if msgObj.FromID == "" {
+				bytes, err := feedbackMsg("please login", message.ErrorStatus)
+				if err != nil {
+					klog.Errorf("get feedback msg error: %v", err)
+					break
+				}
+
+				conn.Write(bytes)
+				break
+			}
+
+			// 清除连接
+			delete(connections, msgObj.FromID)
+			loopFlag = true
 		}
 
+		if loopFlag {
+			break
+		}
 	}
 	conn.Close()
 }

@@ -49,6 +49,15 @@ func main() {
 
 			toMsgBytes, _ := json.Marshal(toMsg)
 			conn.Write(toMsgBytes)
+
+			logoutMsg := message.Msg{
+				MsgType: message.LogoutMsgType,
+				FromID:  userObj.ID,
+			}
+			logoutMsgBytes, _ := json.Marshal(logoutMsg)
+			conn.Write(logoutMsgBytes)
+
+			break
 		}
 	}
 	conn.Close()
