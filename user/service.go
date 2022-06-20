@@ -10,6 +10,9 @@ import (
 type Service interface {
 	// Login 登录
 	Login(username, password string) (*User, error)
+
+	// Get 根据id获取
+	Get(id string) (*User, error)
 }
 
 // DefaultUserService 默认用户服务实现
@@ -27,6 +30,16 @@ func (svc *DefaultUserService) Login(username, password string) (*User, error) {
 	// TODO 密码加密，后续完善
 	if password != user.Password {
 		return nil, errors.New("username or password error")
+	}
+
+	return &user, nil
+}
+
+func (svc *DefaultUserService) Get(id string) (*User, error) {
+	var user User
+	if err := mysql.MysqlClient.Get(&user, "select * from chat_user where id = ?", id); err != nil {
+		klog.Errorf("get user by id error: %v", err)
+		return nil, err
 	}
 
 	return &user, nil
