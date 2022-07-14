@@ -18,6 +18,9 @@ func NewServerHandler() http.Handler {
 	handler := gin.Default()
 	handler.Use(Cors())
 
+	// 开启ws监听
+	go ws.WebsocketManager.Start()
+
 	handler.GET("/health", func(context *gin.Context) {
 		context.JSON(http.StatusOK, "health")
 	})
